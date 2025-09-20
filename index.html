@@ -157,6 +157,8 @@
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            max-height: 600px;
+            overflow-y: auto;
         }
         
         .file-list {
@@ -181,6 +183,8 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            flex: 1;
+            min-width: 0;
         }
         
         .file-icon {
@@ -193,11 +197,20 @@
             justify-content: center;
             color: #4a6cf7;
             font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .file-details {
+            flex: 1;
+            min-width: 0;
         }
         
         .file-details h3 {
             font-size: 16px;
             margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .file-details span {
@@ -208,6 +221,7 @@
         .file-actions {
             display: flex;
             gap: 12px;
+            flex-shrink: 0;
         }
         
         .action-btn {
@@ -327,6 +341,92 @@
             color: #718096;
             font-size: 0.95rem;
         }
+        
+        .share-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+            color: #718096;
+        }
+        
+        .share-link {
+            display: flex;
+            margin: 20px 0;
+        }
+        
+        .share-link input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px 0 0 8px;
+            font-size: 16px;
+        }
+        
+        .copy-btn {
+            padding: 12px 20px;
+            background: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 0;
+            color: #a0aec0;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: #38b2ac;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -336,21 +436,21 @@
                 <i class="fas fa-cloud-upload-alt"></i>
             </div>
             <h1>簡單安全的文件分享</h1>
-            <p class="subtitle">快速上傳和分享文件，無需註冊，完全免費</p>
+            <p class="subtitle">快速上傳和分享文件，所有操作在瀏覽器中完成</p>
         </header>
         
         <div class="stats">
             <div class="stat-item">
-                <div class="stat-number">15,892</div>
+                <div class="stat-number" id="totalFiles">0</div>
                 <div class="stat-label">已分享文件</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">2,405</div>
-                <div class="stat-label">今日上傳</div>
+                <div class="stat-number" id="totalSize">0 MB</div>
+                <div class="stat-label">總存儲量</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">98.7%</div>
-                <div class="stat-label">成功率</div>
+                <div class="stat-number">100%</div>
+                <div class="stat-label">隱私保護</div>
             </div>
         </div>
         
@@ -359,22 +459,22 @@
                 <div class="feature-icon">
                     <i class="fas fa-lock"></i>
                 </div>
-                <h3>安全加密</h3>
-                <p>所有文件均經過加密處理，確保您的數據安全</p>
+                <h3>本地存儲</h3>
+                <p>所有文件存儲在您的瀏覽器中，保護您的隱私</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
                     <i class="fas fa-bolt"></i>
                 </div>
                 <h3>快速傳輸</h3>
-                <p>利用高速伺服器，實現快速上傳和下載</p>
+                <p>無需上傳到伺服器，實現瞬間文件分享</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
                     <i class="fas fa-infinity"></i>
                 </div>
                 <h3>無大小限制</h3>
-                <p>支持大文件上傳，無需擔心文件大小限制</p>
+                <p>支持大文件分享，僅受瀏覽器存儲限制</p>
             </div>
         </div>
         
@@ -387,7 +487,7 @@
                 <div class="drop-area" id="dropArea">
                     <i class="fas fa-cloud-upload-alt"></i>
                     <p>拖放文件到這裡或點擊上傳</p>
-                    <p>最大文件大小: 無限制</p>
+                    <p>最大文件大小: 受瀏覽器限制</p>
                     <button class="btn" id="browseBtn">
                         <i class="fas fa-folder-open"></i>選擇文件
                     </button>
@@ -395,7 +495,7 @@
                 </div>
                 
                 <div class="progress-area">
-                    <p>上進度: <span id="progressPercent">0%</span></p>
+                    <p>上傳進度: <span id="progressPercent">0%</span></p>
                     <div class="progress-bar">
                         <div class="progress" id="progressBar"></div>
                     </div>
@@ -405,109 +505,40 @@
             <div class="files-section">
                 <h2 class="section-title">
                     <i class="fas fa-files"></i>
-                    最近文件
+                    我的文件
+                    <span style="font-size: 14px; margin-left: auto;" id="storageInfo">已使用 0 MB / 5 MB</span>
                 </h2>
                 
-                <div class="file-list">
-                    <div class="file-item">
-                        <div class="file-info">
-                            <div class="file-icon">
-                                <i class="fas fa-file-pdf"></i>
-                            </div>
-                            <div class="file-details">
-                                <h3>項目報告.pdf</h3>
-                                <span>2.4 MB • 2023-10-20</span>
-                            </div>
-                        </div>
-                        <div class="file-actions">
-                            <div class="action-btn download-btn">
-                                <i class="fas fa-download"></i>
-                            </div>
-                            <div class="action-btn share-btn">
-                                <i class="fas fa-share-alt"></i>
-                            </div>
-                            <div class="action-btn delete-btn">
-                                <i class="fas fa-trash"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="file-item">
-                        <div class="file-info">
-                            <div class="file-icon">
-                                <i class="fas fa-file-image"></i>
-                            </div>
-                            <div class="file-details">
-                                <h3>產品設計圖.jpg</h3>
-                                <span>5.7 MB • 2023-10-19</span>
-                            </div>
-                        </div>
-                        <div class="file-actions">
-                            <div class="action-btn download-btn">
-                                <i class="fas fa-download"></i>
-                            </div>
-                            <div class="action-btn share-btn">
-                                <i class="fas fa-share-alt"></i>
-                            </div>
-                            <div class="action-btn delete-btn">
-                                <i class="fas fa-trash"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="file-item">
-                        <div class="file-info">
-                            <div class="file-icon">
-                                <i class="fas fa-file-video"></i>
-                            </div>
-                            <div class="file-details">
-                                <h3>演示視頻.mp4</h3>
-                                <span>42.8 MB • 2023-10-18</span>
-                            </div>
-                        </div>
-                        <div class="file-actions">
-                            <div class="action-btn download-btn">
-                                <i class="fas fa-download"></i>
-                            </div>
-                            <div class="action-btn share-btn">
-                                <i class="fas fa-share-alt"></i>
-                            </div>
-                            <div class="action-btn delete-btn">
-                                <i class="fas fa-trash"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="file-item">
-                        <div class="file-info">
-                            <div class="file-icon">
-                                <i class="fas fa-file-archive"></i>
-                            </div>
-                            <div class="file-details">
-                                <h3>源代碼.zip</h3>
-                                <span>12.3 MB • 2023-10-17</span>
-                            </div>
-                        </div>
-                        <div class="file-actions">
-                            <div class="action-btn download-btn">
-                                <i class="fas fa-download"></i>
-                            </div>
-                            <div class="action-btn share-btn">
-                                <i class="fas fa-share-alt"></i>
-                            </div>
-                            <div class="action-btn delete-btn">
-                                <i class="fas fa-trash"></i>
-                            </div>
-                        </div>
+                <div class="file-list" id="fileList">
+                    <div class="empty-state" id="emptyState">
+                        <i class="fas fa-folder-open"></i>
+                        <p>尚未上傳任何文件</p>
                     </div>
                 </div>
             </div>
         </div>
         
         <footer>
-            <p>© 2023 FileShare - 所有權利保留 | 隱私政策 | 服務條款</p>
+            <p>© 2023 FileShare - 所有操作在本地完成 | 隱私政策 | 服務條款</p>
         </footer>
     </div>
+
+    <div class="share-modal" id="shareModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>分享文件</h2>
+                <span class="close-btn" id="closeModal">&times;</span>
+            </div>
+            <p>複製以下連結分享給其他人：</p>
+            <div class="share-link">
+                <input type="text" id="shareLink" readonly>
+                <button class="copy-btn" id="copyLink">複製</button>
+            </div>
+            <p style="font-size: 14px; color: #718096;">注意：此連結僅在當前瀏覽器有效，清除數據後將失效</p>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">連結已複製到剪貼板</div>
 
     <script>
         // DOM元素
@@ -516,63 +547,109 @@
         const browseBtn = document.getElementById('browseBtn');
         const progressBar = document.getElementById('progressBar');
         const progressPercent = document.getElementById('progressPercent');
-        
-        // 點擊按鈕觸發文件選擇
-        browseBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
-        
+        const fileList = document.getElementById('fileList');
+        const emptyState = document.getElementById('emptyState');
+        const totalFiles = document.getElementById('totalFiles');
+        const totalSize = document.getElementById('totalSize');
+        const storageInfo = document.getElementById('storageInfo');
+        const shareModal = document.getElementById('shareModal');
+        const shareLink = document.getElementById('shareLink');
+        const closeModal = document.getElementById('closeModal');
+        const copyLink = document.getElementById('copyLink');
+        const toast = document.getElementById('toast');
+
+        // 文件數據
+        let files = JSON.parse(localStorage.getItem('files')) || [];
+        let usedStorage = 0;
+        const MAX_STORAGE = 5 * 1024 * 1024; // 5MB
+
+        // 初始化
+        function init() {
+            updateFileList();
+            updateStats();
+            
+            // 點擊按鈕觸發文件選擇
+            browseBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            // 處理文件選擇
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // 拖放功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('dragover');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('dragover');
+            }
+            
+            // 處理文件拖放
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            // 關閉模態框
+            closeModal.addEventListener('click', () => {
+                shareModal.style.display = 'none';
+            });
+            
+            // 複製連結
+            copyLink.addEventListener('click', copyToClipboard);
+        }
+
         // 處理文件選擇
-        fileInput.addEventListener('change', handleFileUpload);
-        
-        // 拖放功能
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
-        
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        function handleFileSelect(e) {
+            const selectedFiles = e.target.files;
+            processFiles(selectedFiles);
         }
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.addEventListener(eventName, highlight, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, unhighlight, false);
-        });
-        
-        function highlight() {
-            dropArea.classList.add('dragover');
-        }
-        
-        function unhighlight() {
-            dropArea.classList.remove('dragover');
-        }
-        
+
         // 處理文件拖放
-        dropArea.addEventListener('drop', handleDrop, false);
-        
         function handleDrop(e) {
             const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles(files);
+            const droppedFiles = dt.files;
+            processFiles(droppedFiles);
         }
-        
-        function handleFiles(files) {
-            if (files.length > 0) {
-                simulateUpload(files[0]);
+
+        // 處理文件
+        function processFiles(fileList) {
+            if (fileList.length === 0) return;
+            
+            for (let i = 0; i < fileList.length; i++) {
+                const file = fileList[i];
+                
+                // 檢查存儲空間
+                if (usedStorage + file.size > MAX_STORAGE) {
+                    alert(`存儲空間不足，無法上傳 ${file.name}`);
+                    continue;
+                }
+                
+                // 模擬上傳過程
+                simulateUpload(file, (uploadedFile) => {
+                    // 保存文件
+                    saveFile(uploadedFile);
+                });
             }
         }
-        
-        function handleFileUpload(e) {
-            const files = e.target.files;
-            handleFiles(files);
-        }
-        
+
         // 模擬上傳過程
-        function simulateUpload(file) {
+        function simulateUpload(file, callback) {
             console.log(`開始上傳: ${file.name}`);
             
             let progress = 0;
@@ -586,42 +663,209 @@
                 if (progress >= 100) {
                     clearInterval(interval);
                     setTimeout(() => {
-                        alert(`文件 ${file.name} 上傳成功！`);
+                        callback(file);
                         progressBar.style.width = '0%';
                         progressPercent.textContent = '0%';
                     }, 500);
                 }
             }, 100);
         }
-        
-        // 下載按鈕點擊事件
-        document.querySelectorAll('.download-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const fileName = this.closest('.file-item').querySelector('.file-details h3').textContent;
-                alert(`開始下載: ${fileName}`);
+
+        // 保存文件
+        function saveFile(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const fileData = {
+                    id: Date.now().toString(),
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: e.target.result,
+                    uploaded: new Date().toISOString()
+                };
+                
+                files.push(fileData);
+                localStorage.setItem('files', JSON.stringify(files));
+                
+                updateFileList();
+                updateStats();
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // 更新文件列表
+        function updateFileList() {
+            if (files.length === 0) {
+                emptyState.style.display = 'block';
+                fileList.innerHTML = '';
+                fileList.appendChild(emptyState);
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            let fileListHTML = '';
+            usedStorage = 0;
+            
+            files.forEach(file => {
+                usedStorage += file.size;
+                
+                const fileSize = formatFileSize(file.size);
+                const uploadDate = formatDate(file.uploaded);
+                const icon = getFileIcon(file.type);
+                
+                fileListHTML += `
+                    <div class="file-item" data-id="${file.id}">
+                        <div class="file-info">
+                            <div class="file-icon">
+                                <i class="${icon}"></i>
+                            </div>
+                            <div class="file-details">
+                                <h3>${file.name}</h3>
+                                <span>${fileSize} • ${uploadDate}</span>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <div class="action-btn download-btn" data-id="${file.id}">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div class="action-btn share-btn" data-id="${file.id}">
+                                <i class="fas fa-share-alt"></i>
+                            </div>
+                            <div class="action-btn delete-btn" data-id="${file.id}">
+                                <i class="fas fa-trash"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
             });
-        });
-        
-        // 分享按鈕點擊事件
-        document.querySelectorAll('.share-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const fileName = this.closest('.file-item').querySelector('.file-details h3').textContent;
-                alert(`生成分享連結: ${fileName}\nhttps://fileshare.example/${Math.random().toString(36).substring(2, 9)}`);
+            
+            fileList.innerHTML = fileListHTML;
+            
+            // 添加事件監聽器
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', handleDownload);
             });
-        });
-        
-        // 刪除按鈕點擊事件
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const fileName = this.closest('.file-item').querySelector('.file-details h3').textContent;
-                if (confirm(`確定要刪除 ${fileName} 嗎？`)) {
-                    this.closest('.file-item').style.opacity = '0';
-                    setTimeout(() => {
-                        this.closest('.file-item').remove();
-                    }, 300);
-                }
+            
+            document.querySelectorAll('.share-btn').forEach(btn => {
+                btn.addEventListener('click', handleShare);
             });
-        });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', handleDelete);
+            });
+        }
+
+        // 處理下載
+        function handleDownload(e) {
+            const fileId = e.currentTarget.getAttribute('data-id');
+            const file = files.find(f => f.id === fileId);
+            
+            if (file) {
+                const a = document.createElement('a');
+                a.href = file.data;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        }
+
+        // 處理分享
+        function handleShare(e) {
+            const fileId = e.currentTarget.getAttribute('data-id');
+            const file = files.find(f => f.id === fileId);
+            
+            if (file) {
+                // 生成分享連結（實際應用中這裡應該是伺服器生成的唯一ID）
+                const shareUrl = `${window.location.origin}${window.location.pathname}?shared=${fileId}`;
+                shareLink.value = shareUrl;
+                shareModal.style.display = 'flex';
+            }
+        }
+
+        // 處理刪除
+        function handleDelete(e) {
+            const fileId = e.currentTarget.getAttribute('data-id');
+            const file = files.find(f => f.id === fileId);
+            
+            if (file && confirm(`確定要刪除 ${file.name} 嗎？`)) {
+                files = files.filter(f => f.id !== fileId);
+                localStorage.setItem('files', JSON.stringify(files));
+                
+                updateFileList();
+                updateStats();
+            }
+        }
+
+        // 更新統計信息
+        function updateStats() {
+            totalFiles.textContent = files.length;
+            totalSize.textContent = `${formatFileSize(usedStorage, 1)}`;
+            
+            const usedMB = (usedStorage / (1024 * 1024)).toFixed(1);
+            storageInfo.textContent = `已使用 ${usedMB} MB / 5 MB`;
+        }
+
+        // 複製到剪貼板
+        function copyToClipboard() {
+            shareLink.select();
+            document.execCommand('copy');
+            
+            // 顯示提示
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // 工具函數：格式化文件大小
+        function formatFileSize(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // 工具函數：格式化日期
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+        }
+
+        // 工具函數：獲取文件圖標
+        function getFileIcon(type) {
+            if (type.includes('image')) return 'fas fa-file-image';
+            if (type.includes('audio')) return 'fas fa-file-audio';
+            if (type.includes('video')) return 'fas fa-file-video';
+            if (type.includes('pdf')) return 'fas fa-file-pdf';
+            if (type.includes('zip') || type.includes('compressed')) return 'fas fa-file-archive';
+            if (type.includes('text') || type.includes('word')) return 'fas fa-file-word';
+            if (type.includes('excel') || type.includes('spreadsheet')) return 'fas fa-file-excel';
+            return 'fas fa-file';
+        }
+
+        // 初始化應用
+        init();
+
+        // 檢查是否有共享文件
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedFileId = urlParams.get('shared');
+        
+        if (sharedFileId) {
+            const sharedFile = files.find(f => f.id === sharedFileId);
+            if (sharedFile) {
+                shareLink.value = window.location.href;
+                shareModal.style.display = 'flex';
+            }
+        }
     </script>
 </body>
 </html>
