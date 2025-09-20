@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileShare - 簡單文件分享</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .upload-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .drop-area {
+            border: 2px dashed #6e8efb;
+            border-radius: 8px;
+            padding: 40px 20px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .drop-area:hover, .drop-area.dragover {
+            background-color: #f0f3ff;
+            border-color: #a777e3;
+        }
+        
+        .drop-area p {
+            margin-bottom: 15px;
+            color: #666;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #6e8efb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5a7de4;
+        }
+        
+        .btn-secondary {
+            background: #777;
+        }
+        
+        .btn-secondary:hover {
+            background: #666;
+        }
+        
+        .btn-danger {
+            background: #ff6b6b;
+        }
+        
+        .btn-danger:hover {
+            background: #ee5a5a;
+        }
+        
+        .files-section h2 {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .file-list {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .file-icon {
+            margin-right: 15px;
+            color: #6e8efb;
+            font-size: 24px;
+        }
+        
+        .file-name {
+            font-weight: 500;
+        }
+        
+        .file-size {
+            color: #777;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .progress-bar {
+            height: 5px;
+            background: #eee;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: #6e8efb;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #777;
+        }
+        
+        @media (max-width: 768px) {
+            .file-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .file-actions {
+                margin-top: 15px;
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FileShare</h1>
+            <p>簡單、快速、安全的文件分享服務</p>
+        </header>
+        
+        <section class="upload-section">
+            <h2>分享文件</h2>
+            <div class="drop-area" id="dropArea">
+                <p>拖放文件到這裡或點擊上傳</p>
+                <button class="btn" id="browseBtn">選擇文件</button>
+                <input type="file" id="fileInput" style="display: none;">
+            </div>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+        </section>
+        
+        <section class="files-section">
+            <h2>已分享的文件</h2>
+            <div class="file-list">
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div>
+                            <span class="file-name">範例文件.pdf</span>
+                            <span class="file-size">(2.4 MB)</span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn">下載</button>
+                        <button class="btn btn-danger">刪除</button>
+                    </div>
+                </div>
+                
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📷</div>
+                        <div>
+                            <span class="file-name">假期照片.zip</span>
+                            <span class="file-size">(15.7 MB)</span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn">下載</button>
+                        <button class="btn btn-danger">刪除</button>
+                    </div>
+                </div>
+                
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📊</div>
+                        <div>
+                            <span class="file-name">季度報告.xlsx</span>
+                            <span class="file-size">(5.2 MB)</span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn">下載</button>
+                        <button class="btn btn-danger">刪除</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>© 2023 FileShare - 所有權利保留</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM元素
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const progressBar = document.getElementById('progressBar');
+        
+        // 點擊按鈕觸發文件選擇
+        browseBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // 處理文件選擇
+        fileInput.addEventListener('change', handleFileUpload);
+        
+        // 拖放功能
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.classList.add('dragover');
+        }
+        
+        function unhighlight() {
+            dropArea.classList.remove('dragover');
+        }
+        
+        // 處理文件拖放
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+        
+        function handleFiles(files) {
+            if (files.length > 0) {
+                simulateUpload(files[0]);
+            }
+        }
+        
+        function handleFileUpload(e) {
+            const files = e.target.files;
+            handleFiles(files);
+        }
+        
+        // 模擬上傳過程
+        function simulateUpload(file) {
+            console.log(`開始上傳: ${file.name}`);
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                progressBar.style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        alert(`文件 ${file.name} 上傳成功！`);
+                        progressBar.style.width = '0%';
+                    }, 500);
+                }
+            }, 100);
+        }
+        
+        // 下載按鈕點擊事件
+        document.querySelectorAll('.file-actions .btn:first-child').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fileName = this.closest('.file-item').querySelector('.file-name').textContent;
+                alert(`開始下載: ${fileName}`);
+            });
+        });
+        
+        // 刪除按鈕點擊事件
+        document.querySelectorAll('.btn-danger').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fileName = this.closest('.file-item').querySelector('.file-name').textContent;
+                if (confirm(`確定要刪除 ${fileName} 嗎？`)) {
+                    this.closest('.file-item').style.opacity = '0';
+                    setTimeout(() => {
+                        this.closest('.file-item').remove();
+                    }, 300);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
